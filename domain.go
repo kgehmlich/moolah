@@ -2,7 +2,8 @@ package main
 
 import "fmt"
 
-var InsufficientFundsErr = fmt.Errorf("Insufficient funds")
+var ErrNonPositiveAmount = fmt.Errorf("amount must be greater than 0")
+var ErrInsufficientFunds = fmt.Errorf("insufficient funds")
 
 type Money float64
 
@@ -24,13 +25,19 @@ func (a *Account) Balance() Money {
 }
 
 func (a *Account) Credit(amt Money) error {
+	if amt <= 0 {
+		return ErrNonPositiveAmount
+	}
 	a.balance += amt
 	return nil
 }
 
 func (a *Account) Debit(amt Money) error {
+	if amt <= 0 {
+		return ErrNonPositiveAmount
+	}
 	if amt > a.balance {
-		return InsufficientFundsErr
+		return ErrInsufficientFunds
 	}
 
 	a.balance -= amt
