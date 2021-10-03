@@ -2,8 +2,9 @@ package main
 
 import "fmt"
 
-var ErrNonPositiveAmount = fmt.Errorf("amount must be greater than 0")
+var ErrDuplicateName = fmt.Errorf("that name already exists")
 var ErrInsufficientFunds = fmt.Errorf("insufficient funds")
+var ErrNonPositiveAmount = fmt.Errorf("amount must be greater than 0")
 
 type Money float64
 
@@ -67,4 +68,59 @@ func (c *Category) Unassign(amt Money) error {
 	}
 	c.available -= amt
 	return nil
+}
+
+type Budget struct {
+	accounts   []*Account
+	categories []*Category
+}
+
+func (b *Budget) Accounts() []*Account {
+	return b.accounts
+}
+
+func (b *Budget) AddAccount(name string) error {
+	for _, a := range b.accounts {
+		if a.Name == name {
+			return ErrDuplicateName
+		}
+	}
+	b.accounts = append(b.accounts, &Account{Name: name})
+	return nil
+}
+
+func (b *Budget) TotalFunds() Money {
+	funds := Money(0)
+	for _, a := range b.accounts {
+		funds += a.Balance()
+	}
+	return funds
+}
+
+func (b *Budget) Categories() []*Category {
+	return b.categories
+}
+
+func (b *Budget) AddCategory(name string) error {
+	for _, c := range b.categories {
+		if c.Name == name {
+			return ErrDuplicateName
+		}
+	}
+	b.categories = append(b.categories, &Category{Name: name})
+	return nil
+}
+
+func (b *Budget) UnassignedFunds() Money {
+	totalFunds := Money(0)
+	for _, a := range b.accounts {
+		totalFunds += a.Balance()
+	}
+
+	assignedFunds := Money(0)
+	for _, c := range b.categories {
+		assignedFunds += c.Available()
+	}
+
+	return totalFunds - assignedFunds
 }

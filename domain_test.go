@@ -1,6 +1,13 @@
 package main
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
+
+func moneyEqual(a, b Money) bool {
+	return math.Abs(float64(a-b)) < 1e-10
+}
 
 func TestAccount(t *testing.T) {
 	t.Run("Balance", func(t *testing.T) {
@@ -8,7 +15,7 @@ func TestAccount(t *testing.T) {
 			expectedBalance := Money(123.45)
 			acct := Account{balance: expectedBalance}
 			returnedBalance := acct.Balance()
-			if returnedBalance != expectedBalance {
+			if !moneyEqual(returnedBalance, expectedBalance) {
 				t.Fatalf("Expected %f, got %f", expectedBalance, returnedBalance)
 			}
 		})
@@ -22,7 +29,7 @@ func TestAccount(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Unexpected error: %s", err)
 			}
-			if acct.Balance() != expectedBalance {
+			if !moneyEqual(acct.Balance(), expectedBalance) {
 				t.Fatalf("Expected %f, got %f", expectedBalance, acct.Balance())
 			}
 		})
@@ -36,7 +43,7 @@ func TestAccount(t *testing.T) {
 			if err != ErrNonPositiveAmount {
 				t.Fatalf("Unexpected error: %s", err)
 			}
-			if acct.Balance() != 100 {
+			if !moneyEqual(acct.Balance(), 100) {
 				t.Fatalf("Account balance changed")
 			}
 		})
@@ -50,7 +57,7 @@ func TestAccount(t *testing.T) {
 			if err != ErrNonPositiveAmount {
 				t.Fatalf("Unexpected error: %s", err)
 			}
-			if acct.Balance() != 100 {
+			if !moneyEqual(acct.Balance(), 100) {
 				t.Fatalf("Account balance changed")
 			}
 		})
@@ -66,7 +73,7 @@ func TestAccount(t *testing.T) {
 				t.Fatalf("Unexpected error: %s", err)
 			}
 			expectedBalance := startingBalance - debitAmount
-			if acct.Balance() != expectedBalance {
+			if !moneyEqual(acct.Balance(), expectedBalance) {
 				t.Fatalf("Expected %f, got %f", expectedBalance, acct.Balance())
 			}
 		})
@@ -80,7 +87,7 @@ func TestAccount(t *testing.T) {
 				t.Fatalf("Unexpected error: %s", err)
 			}
 			expectedBalance := Money(0)
-			if acct.Balance() != expectedBalance {
+			if !moneyEqual(acct.Balance(), expectedBalance) {
 				t.Fatalf("Expected %f, got %f", expectedBalance, acct.Balance())
 			}
 		})
@@ -94,7 +101,7 @@ func TestAccount(t *testing.T) {
 			if err != ErrNonPositiveAmount {
 				t.Fatalf("Unexpected error: %s", err)
 			}
-			if acct.Balance() != 100 {
+			if !moneyEqual(acct.Balance(), 100) {
 				t.Fatalf("Account balance changed")
 			}
 		})
@@ -108,7 +115,7 @@ func TestAccount(t *testing.T) {
 			if err != ErrNonPositiveAmount {
 				t.Fatalf("Unexpected error: %s", err)
 			}
-			if acct.Balance() != 100 {
+			if !moneyEqual(acct.Balance(), 100) {
 				t.Fatalf("Account balance changed")
 			}
 		})
@@ -124,7 +131,7 @@ func TestAccount(t *testing.T) {
 			if err != ErrInsufficientFunds {
 				t.Fatalf("Unexpected error: %s", err)
 			}
-			if acct.Balance() != startingBalance {
+			if !moneyEqual(acct.Balance(), startingBalance) {
 				t.Fatalf("Account balance changed")
 			}
 		})
@@ -145,7 +152,7 @@ func TestCategory(t *testing.T) {
 			expectedAvailable := Money(123.45)
 			cat := Category{available: expectedAvailable}
 			returnedAvailable := cat.Available()
-			if returnedAvailable != expectedAvailable {
+			if !moneyEqual(returnedAvailable, expectedAvailable) {
 				t.Fatalf("Expected %f, got %f", expectedAvailable, returnedAvailable)
 			}
 		})
@@ -161,7 +168,7 @@ func TestCategory(t *testing.T) {
 				t.Fatalf("Unexpected error: %s", err)
 			}
 			expectedAvailable := startingAvailable + assignAmount
-			if cat.Available() != expectedAvailable {
+			if !moneyEqual(cat.Available(), expectedAvailable) {
 				t.Fatalf("Expected %f, got %f", expectedAvailable, cat.Available())
 			}
 		})
@@ -175,7 +182,7 @@ func TestCategory(t *testing.T) {
 			if err != ErrNonPositiveAmount {
 				t.Fatalf("Unexpected error: %s", err)
 			}
-			if cat.Available() != 100 {
+			if !moneyEqual(cat.Available(), 100) {
 				t.Fatalf("Available amount changed")
 			}
 		})
@@ -189,7 +196,7 @@ func TestCategory(t *testing.T) {
 			if err != ErrNonPositiveAmount {
 				t.Fatalf("Unexpected error: %s", err)
 			}
-			if cat.Available() != 100 {
+			if !moneyEqual(cat.Available(), 100) {
 				t.Fatalf("Available amount changed")
 			}
 		})
@@ -205,7 +212,7 @@ func TestCategory(t *testing.T) {
 				t.Fatalf("Unexpected error: %s", err)
 			}
 			expectedAvailable := startingAvailable - unassignAmount
-			if cat.Available() != expectedAvailable {
+			if !moneyEqual(cat.Available(), expectedAvailable) {
 				t.Fatalf("Expected %f, got %f", expectedAvailable, cat.Available())
 			}
 		})
@@ -219,7 +226,7 @@ func TestCategory(t *testing.T) {
 			if err != ErrNonPositiveAmount {
 				t.Fatalf("Unexpected error: %s", err)
 			}
-			if cat.Available() != 100 {
+			if !moneyEqual(cat.Available(), 100) {
 				t.Fatalf("Available amount changed")
 			}
 		})
@@ -233,8 +240,122 @@ func TestCategory(t *testing.T) {
 			if err != ErrNonPositiveAmount {
 				t.Fatalf("Unexpected error: %s", err)
 			}
-			if cat.Available() != 100 {
+			if !moneyEqual(cat.Available(), 100) {
 				t.Fatalf("Available amount changed")
+			}
+		})
+	})
+}
+
+func TestBudget(t *testing.T) {
+	t.Run("AddAccount", func(t *testing.T) {
+		t.Run("creates new account", func(t *testing.T) {
+			acctName := "test account"
+			budget := Budget{}
+			err := budget.AddAccount(acctName)
+			if err != nil {
+				t.Fatalf("Unespected error: %s", err)
+			}
+			if count := len(budget.Accounts()); count != 1 {
+				t.Fatalf("Unexpected number of accounts. Expected %d, got %d", 1, count)
+			}
+			if n := budget.Accounts()[0].Name; n != acctName {
+				t.Fatalf("Unexpected account name. Expected %s, got %s", acctName, n)
+			}
+		})
+
+		t.Run("returns error if name already exists", func(t *testing.T) {
+			existingAcctName := "existing account"
+			existingAcct := &Account{Name: existingAcctName}
+			budget := Budget{
+				accounts: []*Account{existingAcct},
+			}
+
+			err := budget.AddAccount(existingAcctName)
+			if err == nil {
+				t.Fatalf("Expected error, got nil")
+			}
+			if err != ErrDuplicateName {
+				t.Fatalf("Unexpected error: %s", err)
+			}
+			if count := len(budget.Accounts()); count != 1 {
+				t.Fatalf("Unexpected number of accounts. Expected %d, got %d", 1, count)
+			}
+		})
+	})
+
+	t.Run("TotalFunds", func(t *testing.T) {
+		t.Run("returns total amount of money across all accounts", func(t *testing.T) {
+			accts := []*Account{
+				{balance: 111.11},
+				{balance: 222.22},
+			}
+			expectedFunds := Money(333.33)
+
+			budget := Budget{accounts: accts}
+
+			if f := budget.TotalFunds(); !moneyEqual(f, expectedFunds) {
+				t.Fatalf("Expected %f, got %f", expectedFunds, f)
+			}
+		})
+	})
+
+	t.Run("AddCategory", func(t *testing.T) {
+		t.Run("creates new category", func(t *testing.T) {
+			catName := "test category"
+			budget := Budget{}
+			err := budget.AddCategory(catName)
+			if err != nil {
+				t.Fatalf("Unespected error: %s", err)
+			}
+			if count := len(budget.Categories()); count != 1 {
+				t.Fatalf("Unexpected number of categories. Expected %d, got %d", 1, count)
+			}
+			if n := budget.Categories()[0].Name; n != catName {
+				t.Fatalf("Unexpected category name. Expected %s, got %s", catName, n)
+			}
+		})
+
+		t.Run("returns error if name already exists", func(t *testing.T) {
+			existingCategoryName := "existing account"
+			existingCategory := &Category{Name: existingCategoryName}
+			budget := Budget{
+				categories: []*Category{existingCategory},
+			}
+
+			err := budget.AddCategory(existingCategoryName)
+			if err == nil {
+				t.Fatalf("Expected error, got nil")
+			}
+			if err != ErrDuplicateName {
+				t.Fatalf("Unexpected error: %s", err)
+			}
+			if count := len(budget.Categories()); count != 1 {
+				t.Fatalf("Unexpected number of categories. Expected %d, got %d", 1, count)
+			}
+		})
+	})
+
+	t.Run("UnassignedFunds", func(t *testing.T) {
+		t.Run("returns unassigned funds", func(t *testing.T) {
+			accts := []*Account{
+				{balance: 111.11},
+				{balance: 222.22},
+			}
+			categories := []*Category{
+				{available: 100},
+				{available: 200},
+			}
+			budget := Budget{
+				accounts:   accts,
+				categories: categories,
+			}
+			expectedUnassigned := Money(33.33)
+
+			availableFunds := budget.UnassignedFunds()
+
+			if !moneyEqual(availableFunds, expectedUnassigned) {
+				t.Fatalf("Expected %f, got %f", expectedUnassigned, availableFunds)
 			}
 		})
 	})
