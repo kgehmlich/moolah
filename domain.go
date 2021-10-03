@@ -43,3 +43,28 @@ func (a *Account) Debit(amt Money) error {
 	a.balance -= amt
 	return nil
 }
+
+type Category struct {
+	Name      string
+	available Money
+}
+
+func (c *Category) Available() Money {
+	return c.available
+}
+
+func (c *Category) Assign(amt Money) error {
+	if amt <= 0 {
+		return ErrNonPositiveAmount
+	}
+	c.available += amt
+	return nil
+}
+
+func (c *Category) Unassign(amt Money) error {
+	if amt <= 0 {
+		return ErrNonPositiveAmount
+	}
+	c.available -= amt
+	return nil
+}

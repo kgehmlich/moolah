@@ -130,3 +130,112 @@ func TestAccount(t *testing.T) {
 		})
 	})
 }
+
+func TestCategory(t *testing.T) {
+	t.Run("has name", func(t *testing.T) {
+		expectedName := "test name"
+		cat := Category{Name: expectedName}
+		if cat.Name != expectedName {
+			t.Fatalf("Expected %s, got %s", expectedName, cat.Name)
+		}
+	})
+
+	t.Run("Available", func(t *testing.T) {
+		t.Run("returns available amount", func(t *testing.T) {
+			expectedAvailable := Money(123.45)
+			cat := Category{available: expectedAvailable}
+			returnedAvailable := cat.Available()
+			if returnedAvailable != expectedAvailable {
+				t.Fatalf("Expected %f, got %f", expectedAvailable, returnedAvailable)
+			}
+		})
+	})
+
+	t.Run("Assign", func(t *testing.T) {
+		t.Run("increases available by amount", func(t *testing.T) {
+			startingAvailable := Money(123.45)
+			assignAmount := Money(100)
+			cat := Category{available: startingAvailable}
+			err := cat.Assign(assignAmount)
+			if err != nil {
+				t.Fatalf("Unexpected error: %s", err)
+			}
+			expectedAvailable := startingAvailable + assignAmount
+			if cat.Available() != expectedAvailable {
+				t.Fatalf("Expected %f, got %f", expectedAvailable, cat.Available())
+			}
+		})
+
+		t.Run("with zero amount returns error", func(t *testing.T) {
+			cat := Category{available: 100}
+			err := cat.Assign(0)
+			if err == nil {
+				t.Fatalf("Expected error, got nil")
+			}
+			if err != ErrNonPositiveAmount {
+				t.Fatalf("Unexpected error: %s", err)
+			}
+			if cat.Available() != 100 {
+				t.Fatalf("Available amount changed")
+			}
+		})
+
+		t.Run("with negative amount returns error", func(t *testing.T) {
+			cat := Category{available: 100}
+			err := cat.Assign(-1)
+			if err == nil {
+				t.Fatalf("Expected error, got nil")
+			}
+			if err != ErrNonPositiveAmount {
+				t.Fatalf("Unexpected error: %s", err)
+			}
+			if cat.Available() != 100 {
+				t.Fatalf("Available amount changed")
+			}
+		})
+	})
+
+	t.Run("Unassign", func(t *testing.T) {
+		t.Run("decreases available by amount", func(t *testing.T) {
+			startingAvailable := Money(123.45)
+			unassignAmount := Money(200)
+			cat := Category{available: startingAvailable}
+			err := cat.Unassign(unassignAmount)
+			if err != nil {
+				t.Fatalf("Unexpected error: %s", err)
+			}
+			expectedAvailable := startingAvailable - unassignAmount
+			if cat.Available() != expectedAvailable {
+				t.Fatalf("Expected %f, got %f", expectedAvailable, cat.Available())
+			}
+		})
+
+		t.Run("with zero amount returns error", func(t *testing.T) {
+			cat := Category{available: 100}
+			err := cat.Unassign(0)
+			if err == nil {
+				t.Fatalf("Expected error, got nil")
+			}
+			if err != ErrNonPositiveAmount {
+				t.Fatalf("Unexpected error: %s", err)
+			}
+			if cat.Available() != 100 {
+				t.Fatalf("Available amount changed")
+			}
+		})
+
+		t.Run("with negative amount returns error", func(t *testing.T) {
+			cat := Category{available: 100}
+			err := cat.Unassign(-1)
+			if err == nil {
+				t.Fatalf("Expected error, got nil")
+			}
+			if err != ErrNonPositiveAmount {
+				t.Fatalf("Unexpected error: %s", err)
+			}
+			if cat.Available() != 100 {
+				t.Fatalf("Available amount changed")
+			}
+		})
+	})
+}
