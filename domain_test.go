@@ -9,6 +9,13 @@ func moneyEqual(a, b Money) bool {
 	return math.Abs(float64(a-b)) < 1e-10
 }
 
+func baseBudget() Budget {
+	return Budget{
+		accounts:   map[UniqueID]*Account{},
+		categories: map[UniqueID]*Category{},
+	}
+}
+
 func TestAccount(t *testing.T) {
 	t.Run("ID", func(t *testing.T) {
 		t.Run("returns the account's permanent ID", func(t *testing.T) {
@@ -89,20 +96,6 @@ func TestAccount(t *testing.T) {
 			}
 		})
 
-		t.Run("with amount equal to balance succeeds", func(t *testing.T) {
-			startingBalance := Money(123.45)
-			debitAmount := startingBalance
-			acct := Account{balance: startingBalance}
-			err := acct.Debit(debitAmount)
-			if err != nil {
-				t.Fatalf("Unexpected error: %s", err)
-			}
-			expectedBalance := Money(0)
-			if !moneyEqual(acct.Balance(), expectedBalance) {
-				t.Fatalf("Expected %f, got %f", expectedBalance, acct.Balance())
-			}
-		})
-
 		t.Run("with zero amount returns error", func(t *testing.T) {
 			acct := Account{balance: 100}
 			err := acct.Debit(0)
@@ -127,22 +120,6 @@ func TestAccount(t *testing.T) {
 				t.Fatalf("Unexpected error: %s", err)
 			}
 			if !moneyEqual(acct.Balance(), 100) {
-				t.Fatalf("Account balance changed")
-			}
-		})
-
-		t.Run("with amount greater than balance returns error", func(t *testing.T) {
-			startingBalance := Money(123.45)
-			debitAmount := Money(1000)
-			acct := Account{balance: startingBalance}
-			err := acct.Debit(debitAmount)
-			if err == nil {
-				t.Fatalf("Expected error, got nil")
-			}
-			if err != ErrInsufficientFunds {
-				t.Fatalf("Unexpected error: %s", err)
-			}
-			if !moneyEqual(acct.Balance(), startingBalance) {
 				t.Fatalf("Account balance changed")
 			}
 		})
@@ -273,7 +250,7 @@ func TestBudget(t *testing.T) {
 	t.Run("AddAccount", func(t *testing.T) {
 		t.Run("creates new account", func(t *testing.T) {
 			acctName := "test account"
-			budget := Budget{}
+			budget := baseBudget()
 			err := budget.AddAccount(acctName)
 			if err != nil {
 				t.Fatalf("Unespected error: %s", err)
@@ -288,7 +265,7 @@ func TestBudget(t *testing.T) {
 
 		t.Run("assigns a unique ID to the new account", func(t *testing.T) {
 			acctName := "test account"
-			budget := Budget{}
+			budget := baseBudget()
 			err := budget.AddAccount(acctName)
 			if err != nil {
 				t.Fatalf("Unespected error: %s", err)
@@ -302,7 +279,7 @@ func TestBudget(t *testing.T) {
 			existingAcctName := "existing account"
 			existingAcct := &Account{Name: existingAcctName}
 			budget := Budget{
-				accounts: []*Account{existingAcct},
+				accounts: map[UniqueID]*Account{"test id": existingAcct},
 			}
 
 			err := budget.AddAccount(existingAcctName)
@@ -320,9 +297,9 @@ func TestBudget(t *testing.T) {
 
 	t.Run("TotalFunds", func(t *testing.T) {
 		t.Run("returns total amount of money across all accounts", func(t *testing.T) {
-			accts := []*Account{
-				{balance: 111.11},
-				{balance: 222.22},
+			accts := map[UniqueID]*Account{
+				"acct1": {balance: 111.11},
+				"acct2": {balance: 222.22},
 			}
 			expectedFunds := Money(333.33)
 
@@ -337,7 +314,7 @@ func TestBudget(t *testing.T) {
 	t.Run("AddCategory", func(t *testing.T) {
 		t.Run("creates new category", func(t *testing.T) {
 			catName := "test category"
-			budget := Budget{}
+			budget := baseBudget()
 			err := budget.AddCategory(catName)
 			if err != nil {
 				t.Fatalf("Unespected error: %s", err)
@@ -352,7 +329,7 @@ func TestBudget(t *testing.T) {
 
 		t.Run("assigns a unique ID to the new category", func(t *testing.T) {
 			categoryName := "test category"
-			budget := Budget{}
+			budget := baseBudget()
 			err := budget.AddCategory(categoryName)
 			if err != nil {
 				t.Fatalf("Unespected error: %s", err)
@@ -366,7 +343,7 @@ func TestBudget(t *testing.T) {
 			existingCategoryName := "existing account"
 			existingCategory := &Category{Name: existingCategoryName}
 			budget := Budget{
-				categories: []*Category{existingCategory},
+				categories: map[UniqueID]*Category{"test_cat": existingCategory},
 			}
 
 			err := budget.AddCategory(existingCategoryName)
@@ -384,13 +361,13 @@ func TestBudget(t *testing.T) {
 
 	t.Run("UnassignedFunds", func(t *testing.T) {
 		t.Run("returns unassigned funds", func(t *testing.T) {
-			accts := []*Account{
-				{balance: 111.11},
-				{balance: 222.22},
+			accts := map[UniqueID]*Account{
+				"acct1": {balance: 111.11},
+				"acct2": {balance: 222.22},
 			}
-			categories := []*Category{
-				{available: 100},
-				{available: 200},
+			categories := map[UniqueID]*Category{
+				"cat1": {available: 100},
+				"cat2": {available: 200},
 			}
 			budget := Budget{
 				accounts:   accts,
@@ -403,6 +380,49 @@ func TestBudget(t *testing.T) {
 			if !moneyEqual(availableFunds, expectedUnassigned) {
 				t.Fatalf("Expected %f, got %f", expectedUnassigned, availableFunds)
 			}
+		})
+	})
+
+	t.Run("Spend", func(t *testing.T) {
+		t.Run("allowed amount", func(t *testing.T) {
+			spendAmount := Money(3.50)
+
+			acctID := UniqueID("test account")
+			startingAccountBalance := Money(123.45)
+			acct := &Account{
+				id:      acctID,
+				balance: startingAccountBalance,
+			}
+
+			catID := UniqueID("test category")
+			startingCategoryAssignedAmount := Money(55.55)
+			cat := &Category{
+				id:        catID,
+				available: startingCategoryAssignedAmount,
+			}
+
+			budget := Budget{
+				accounts:   map[UniqueID]*Account{acctID: acct},
+				categories: map[UniqueID]*Category{catID: cat},
+			}
+
+			budget.Spend(spendAmount, acctID, catID)
+
+			t.Run("debits account", func(t *testing.T) {
+				expected := startingAccountBalance - spendAmount
+				actual := budget.Accounts()[0].Balance()
+				if actual != expected {
+					t.Fatalf("Expected %f, got %f", expected, actual)
+				}
+			})
+
+			t.Run("unassigns from category", func(t *testing.T) {
+				expected := startingCategoryAssignedAmount - spendAmount
+				actual := budget.Categories()[0].Available()
+				if actual != expected {
+					t.Fatalf("Expected %f, got %f", expected, actual)
+				}
+			})
 		})
 	})
 }

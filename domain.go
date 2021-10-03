@@ -8,7 +8,6 @@ import (
 )
 
 var ErrDuplicateName = fmt.Errorf("that name already exists")
-var ErrInsufficientFunds = fmt.Errorf("insufficient funds")
 var ErrNonPositiveAmount = fmt.Errorf("amount must be greater than 0")
 
 type UniqueID string
@@ -53,9 +52,6 @@ func (a *Account) Debit(amt Money) error {
 	if amt <= 0 {
 		return ErrNonPositiveAmount
 	}
-	if amt > a.balance {
-		return ErrInsufficientFunds
-	}
 
 	a.balance -= amt
 	return nil
@@ -92,12 +88,16 @@ func (c *Category) Unassign(amt Money) error {
 }
 
 type Budget struct {
-	accounts   []*Account
-	categories []*Category
+	accounts   map[UniqueID]*Account
+	categories map[UniqueID]*Category
 }
 
 func (b *Budget) Accounts() []*Account {
-	return b.accounts
+	accts := []*Account{}
+	for _, v := range b.accounts {
+		accts = append(accts, v)
+	}
+	return accts
 }
 
 func (b *Budget) AddAccount(name string) error {
@@ -106,11 +106,12 @@ func (b *Budget) AddAccount(name string) error {
 			return ErrDuplicateName
 		}
 	}
+	id := generateUniqueID()
 	newAcct := &Account{
 		Name: name,
-		id:   generateUniqueID(),
+		id:   id,
 	}
-	b.accounts = append(b.accounts, newAcct)
+	b.accounts[id] = newAcct
 	return nil
 }
 
@@ -123,7 +124,11 @@ func (b *Budget) TotalFunds() Money {
 }
 
 func (b *Budget) Categories() []*Category {
-	return b.categories
+	cats := []*Category{}
+	for _, v := range b.categories {
+		cats = append(cats, v)
+	}
+	return cats
 }
 
 func (b *Budget) AddCategory(name string) error {
@@ -132,11 +137,12 @@ func (b *Budget) AddCategory(name string) error {
 			return ErrDuplicateName
 		}
 	}
+	id := generateUniqueID()
 	newCategory := &Category{
 		Name: name,
-		id:   generateUniqueID(),
+		id:   id,
 	}
-	b.categories = append(b.categories, newCategory)
+	b.categories[id] = newCategory
 	return nil
 }
 
@@ -152,4 +158,12 @@ func (b *Budget) UnassignedFunds() Money {
 	}
 
 	return totalFunds - assignedFunds
+}
+
+func (b *Budget) Spend(amt Money, acctID, categoryID UniqueID) {
+	acct := b.accounts[acctID]
+	acct.Debit(amt)
+
+	cat := b.categories[categoryID]
+	cat.Unassign(amt)
 }
