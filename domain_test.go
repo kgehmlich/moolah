@@ -10,6 +10,17 @@ func moneyEqual(a, b Money) bool {
 }
 
 func TestAccount(t *testing.T) {
+	t.Run("ID", func(t *testing.T) {
+		t.Run("returns the account's permanent ID", func(t *testing.T) {
+			expectedID := UniqueID("test_id")
+			acct := Account{id: expectedID}
+			returnedID := acct.ID()
+			if returnedID != expectedID {
+				t.Fatalf("Expected %s, got %s", expectedID, returnedID)
+			}
+		})
+	})
+
 	t.Run("Balance", func(t *testing.T) {
 		t.Run("returns balance", func(t *testing.T) {
 			expectedBalance := Money(123.45)
@@ -139,6 +150,17 @@ func TestAccount(t *testing.T) {
 }
 
 func TestCategory(t *testing.T) {
+	t.Run("ID", func(t *testing.T) {
+		t.Run("returns the category's permanent ID", func(t *testing.T) {
+			expectedID := UniqueID("test_id")
+			cat := Category{id: expectedID}
+			returnedID := cat.ID()
+			if returnedID != expectedID {
+				t.Fatalf("Expected %s, got %s", expectedID, returnedID)
+			}
+		})
+	})
+
 	t.Run("has name", func(t *testing.T) {
 		expectedName := "test name"
 		cat := Category{Name: expectedName}
@@ -264,6 +286,18 @@ func TestBudget(t *testing.T) {
 			}
 		})
 
+		t.Run("assigns a unique ID to the new account", func(t *testing.T) {
+			acctName := "test account"
+			budget := Budget{}
+			err := budget.AddAccount(acctName)
+			if err != nil {
+				t.Fatalf("Unespected error: %s", err)
+			}
+			if id := budget.Accounts()[0].ID(); id == "" {
+				t.Fatalf("Expected non-empty account ID")
+			}
+		})
+
 		t.Run("returns error if name already exists", func(t *testing.T) {
 			existingAcctName := "existing account"
 			existingAcct := &Account{Name: existingAcctName}
@@ -313,6 +347,18 @@ func TestBudget(t *testing.T) {
 			}
 			if n := budget.Categories()[0].Name; n != catName {
 				t.Fatalf("Unexpected category name. Expected %s, got %s", catName, n)
+			}
+		})
+
+		t.Run("assigns a unique ID to the new category", func(t *testing.T) {
+			categoryName := "test category"
+			budget := Budget{}
+			err := budget.AddCategory(categoryName)
+			if err != nil {
+				t.Fatalf("Unespected error: %s", err)
+			}
+			if id := budget.Categories()[0].ID(); id == "" {
+				t.Fatalf("Expected non-empty category ID")
 			}
 		})
 

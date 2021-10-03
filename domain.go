@@ -1,12 +1,23 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/google/uuid"
+)
 
 var ErrDuplicateName = fmt.Errorf("that name already exists")
 var ErrInsufficientFunds = fmt.Errorf("insufficient funds")
 var ErrNonPositiveAmount = fmt.Errorf("amount must be greater than 0")
 
+type UniqueID string
 type Money float64
+
+func generateUniqueID() UniqueID {
+	id := strings.ReplaceAll(uuid.NewString(), "-", "")
+	return UniqueID(id)
+}
 
 type Creditable interface {
 	Credit(amt Money) error
@@ -18,7 +29,12 @@ type Debitable interface {
 
 type Account struct {
 	Name    string
+	id      UniqueID
 	balance Money
+}
+
+func (a *Account) ID() UniqueID {
+	return a.id
 }
 
 func (a *Account) Balance() Money {
@@ -47,7 +63,12 @@ func (a *Account) Debit(amt Money) error {
 
 type Category struct {
 	Name      string
+	id        UniqueID
 	available Money
+}
+
+func (c *Category) ID() UniqueID {
+	return c.id
 }
 
 func (c *Category) Available() Money {
@@ -85,7 +106,11 @@ func (b *Budget) AddAccount(name string) error {
 			return ErrDuplicateName
 		}
 	}
-	b.accounts = append(b.accounts, &Account{Name: name})
+	newAcct := &Account{
+		Name: name,
+		id:   generateUniqueID(),
+	}
+	b.accounts = append(b.accounts, newAcct)
 	return nil
 }
 
@@ -107,7 +132,11 @@ func (b *Budget) AddCategory(name string) error {
 			return ErrDuplicateName
 		}
 	}
-	b.categories = append(b.categories, &Category{Name: name})
+	newCategory := &Category{
+		Name: name,
+		id:   generateUniqueID(),
+	}
+	b.categories = append(b.categories, newCategory)
 	return nil
 }
 
