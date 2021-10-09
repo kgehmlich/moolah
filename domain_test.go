@@ -383,6 +383,49 @@ func TestBudget(t *testing.T) {
 		})
 	})
 
+	t.Run("Deposit", func(t *testing.T) {
+		t.Run("allowed amount", func(t *testing.T) {
+			depositAmount := Money(3.50)
+
+			acctID := UniqueID("test account")
+			startingAccountBalance := Money(123.45)
+			acct := &Account{
+				id:      acctID,
+				balance: startingAccountBalance,
+			}
+
+			catID := UniqueID("test category")
+			startingCategoryAssignedAmount := Money(55.55)
+			cat := &Category{
+				id:        catID,
+				available: startingCategoryAssignedAmount,
+			}
+
+			budget := Budget{
+				accounts:   map[UniqueID]*Account{acctID: acct},
+				categories: map[UniqueID]*Category{catID: cat},
+			}
+
+			budget.Deposit(depositAmount, acctID)
+
+			t.Run("credits account", func(t *testing.T) {
+				expected := startingAccountBalance + depositAmount
+				actual := budget.Accounts()[0].Balance()
+				if actual != expected {
+					t.Fatalf("Expected %f, got %f", expected, actual)
+				}
+			})
+
+			t.Run("increases unassigned funds", func(t *testing.T) {
+				expected := startingAccountBalance + depositAmount - startingCategoryAssignedAmount
+				actual := budget.UnassignedFunds()
+				if actual != expected {
+					t.Fatalf("Expected %f, got %f", expected, actual)
+				}
+			})
+		})
+	})
+
 	t.Run("Spend", func(t *testing.T) {
 		t.Run("allowed amount", func(t *testing.T) {
 			spendAmount := Money(3.50)

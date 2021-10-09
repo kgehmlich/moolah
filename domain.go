@@ -18,14 +18,6 @@ func generateUniqueID() UniqueID {
 	return UniqueID(id)
 }
 
-type Creditable interface {
-	Credit(amt Money) error
-}
-
-type Debitable interface {
-	Debit(amt Money) error
-}
-
 type Account struct {
 	Name    string
 	id      UniqueID
@@ -158,6 +150,11 @@ func (b *Budget) UnassignedFunds() Money {
 	}
 
 	return totalFunds - assignedFunds
+}
+
+func (b *Budget) Deposit(amt Money, acctID UniqueID) {
+	acct := b.accounts[acctID]
+	acct.Credit(amt)
 }
 
 func (b *Budget) Spend(amt Money, acctID, categoryID UniqueID) {
